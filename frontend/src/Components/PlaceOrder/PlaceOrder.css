@@ -1,0 +1,46 @@
+.place-order {
+  display: flex;
+  align-items: flex-start; /* Use flex-start to ensure alignment at the top */
+  justify-content: space-between;
+  gap: 50px;
+  margin-top: 50px; /* Reduced top margin by 50px */
+}
+
+.place-order-left {
+  width: 100%;
+  max-width: 500px; /* Set the max width to 500px */
+}
+
+.place-order-left .title {
+  font-size: 30px;
+  font-weight: 600;
+  margin-bottom: 50px;
+}
+
+.place-order-left input {
+  margin-bottom: 15px;
+  width: calc(100% - 20px); /* Reduced width by 20px */
+  padding: 10px;
+  border: 1px solid #c5c5c5;
+  border-radius: 4px;
+  outline-color: tomato;
+}
+
+/* Adjust the layout of the multi-fields */
+.place-order-left .multi-fields {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.place-order-left .multi-fields input {
+  flex: 1 1 48%; /* Ensure each input takes up 48% of the available width */
+  min-width: 180px; /* Prevent inputs from shrinking too much */
+  width: calc(100% - 20px); /* Reduced width by 20px for consistency */
+}
+
+.place-order-right {
+  width: 100%;
+  max-width: max(40%, 500px);
+  margin-bottom: 150px; /* Added margin-bottom of 150px */
+}

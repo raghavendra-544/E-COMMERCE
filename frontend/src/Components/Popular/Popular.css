@@ -1,0 +1,123 @@
+.popular {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    height: 90vh;
+    margin: 0 15px; /* Adjust margins for better screen fit */
+}
+
+.popular h1 {
+    color: #171717;
+    font-size: 50px;
+    font-weight: 600;
+}
+
+.popular hr {
+    width: 200px;
+    height: 6px;
+    border-radius: 10px;
+    background: #252525;
+}
+
+.popular-item {
+    margin-top: 50px;
+    display: flex;
+    gap: 40px; /* Increased gap between items */
+}
+
+/* Adjustments for screens from 1280px to 800px */
+@media(max-width:1280px) {
+    .popular {
+        height: 70vh;
+        margin: 40px 20px 40px 20px; /* Added 20px more to top and bottom margins */
+    }
+    .popular h1 {
+        font-size: 40px;
+    }
+    .popular hr {
+        width: 160px;
+        height: 4px;
+    }
+    .popular-item {
+        gap: 30px; /* Increased gap */
+        margin-top: 30px;
+    }
+}
+
+
+/* Adjustments for screens from 800px to 500px */
+@media(max-width:800px) and (min-width:500px) {
+    .popular {
+        height: 60vh; /* Increased height for more space */
+        width: 95%;  /* Increased width to take up more space */
+        margin: 0 auto; /* Center the content */
+    }
+    .popular h1 {
+        font-size: 32px; /* Slightly increased font size */
+    }
+    .popular hr {
+        width: 140px; /* Increased width for a balanced look */
+        height: 4px;
+    }
+    .popular-item {
+        gap: 25px; /* Increased gap for a more spacious layout */
+        margin-top: 25px;
+        width: 100%;
+        margin: 0 auto; /* Center the items */
+    }
+}
+
+/* Adjustments for screens under 800px */
+@media(max-width:800px) {
+    .popular {
+        height: auto; /* Let the height adjust based on content */
+        width: 100%; /* Use 100% width to take up the available space */
+        margin: 0 10px; /* Reduce margin for smaller screens */
+    }
+    .popular h1 {
+        font-size: 26px; /* Adjusted font size */
+    }
+    .popular hr {
+        width: 120px; /* Reduced width */
+        height: 4px;
+    }
+    .popular-item {
+        gap: 5px; /* Reduced gap between items to 5px */
+        margin-top: 20px;
+        display: flex;
+        justify-content: center; /* Align items to the left */
+        width: 100%;
+        margin: 0 auto; /* Center the items */
+    }
+    .popular-item img {
+        width: 100%; /* Allow the image to resize relative to the container */
+        max-width: 180px; /* Set max width for image */
+        height: auto; /* Maintain aspect ratio */
+        margin-right: 20px; /* Space between the image and content */
+    }
+}
+
+
+/* Adjustments for screens under 500px */
+@media(max-width:500px) {
+    .popular {
+        height: auto; /* Let the height adjust based on content */
+        width: 95%; /* Increased width to make it wider on small screens */
+        margin: 0 10px; /* Adjust margin for better fit */
+    }
+    .popular h1 {
+        font-size: 24px; /* Adjust font size */
+    }
+    .popular hr {
+        width: 100px; /* Further reduced width */
+        height: 3px;
+    }
+    .popular-item {
+        display: grid;
+        grid-template-columns: 1fr 1fr; /* Grid layout for two columns */
+        gap: 25px; /* Increased gap for better spacing */
+        width: 100%;
+        margin: 0 auto; /* Center the items */
+    }
+}

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <link href="https://fonts.googleapis.com/css?family=Poppins" rel="stylesheet">
+    <title>Razorpay Payment</title>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        form {
+            display: inline-block;
+            margin: auto;
+        }
+
+        label, input, button {
+            display: block;
+            margin: 10px 0;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #F37254;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <h1>Razorpay Payment Gateway Integration</h1>
+    <form id="payment-form">
+        <label for="amount">Amount (in INR):</label>
+        <input type="number" id="amount" name="amount" min="1" required>
+        <button type="button" id="pay-button" onclick="payNow()">Pay Now</button>
+    </form>
+
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+    <script>
+        async function payNow() {
+            const payButton = document.getElementById('pay-button');
+            const amountInput = document.getElementById('amount');
+            const amount = parseFloat(amountInput.value) * 100; // Convert to paise
+            console.log('Sending payload:');
+            payButton.disabled = true; // Disable button to prevent multiple clicks
+
+            // Validate amount
+            if (!amount || amount <= 0) {
+                alert('Please enter a valid amount.');
+                payButton.disabled = false;
+                return;
+            }
+
+            try {
+                // Create an order on the server
+                const response = await fetch('http://localhost:3001/create-order', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        amount: 500, // Amount in paise
+                        currency: 'INR',
+                        receipt: `receipt_${Date.now()}`,
+                        notes: {}
+                    })
+                });
+
+                // Handle server response
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Failed to create order: ${errorText}`);
+                }
+
+                const order = await response.json();
+
+                // Razorpay Checkout Options
+                const options = {
+                    key: 'rzp_test_4HWc8dIvl5vg8Y', // Replace with your Razorpay key
+                    amount: 500, // Amount in paise
+                    currency: 'INR',
+                    name: 'FASHIONMART',
+                    description: 'Test Transaction',
+                    order_id: order.id, // Order ID from server
+                    prefill: {
+                        name: 'Your Name',
+                        email: 'your.email@example.com',
+                        contact: '9999999999'
+                    },
+                    theme: {
+                        color: '#F37254'
+                    },
+                    handler: async function(response) {
+                        // Send payment details to the server for verification
+                        try {
+                            const verifyResponse = await fetch('http://localhost:3001/verify-payment', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    razorpay_order_id: response.razorpay_order_id,
+                                    razorpay_payment_id: response.razorpay_payment_id,
+                                    razorpay_signature: response.razorpay_signature
+                                })
+                            });
+
+                            const verifyData = await verifyResponse.json();
+
+                            if (verifyData.status === 'ok') {
+                                alert('Payment successful! Redirecting...');
+                                window.location.href = '/payment-success';
+                            } else {
+                                throw new Error('Payment verification failed.');
+                            }
+                        } catch (error) {
+                            console.error('Payment verification error:', error);
+                            alert('An error occurred while verifying the payment. Please try again.');
+                        }
+                    }
+                };
+
+                const rzp = new Razorpay(options);
+                rzp.on('payment.failed', function(response) {
+                    alert('Payment failed: ' + response.error.description);
+                    payButton.disabled = false; // Re-enable the button on failure
+                });
+
+                rzp.open(); // Open Razorpay Checkout
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again later.');
+                payButton.disabled = false; // Re-enable the button on error
+            }
+        }
+    </script>
+</body>
+</html>
