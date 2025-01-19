@@ -1,63 +1,59 @@
-const port = process.env.PORT || 3000;
-
 const express = require("express");
-const app = express();
 const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
 const multer = require("multer");
 const path = require("path");
 const cors = require("cors");
-const Razorpay = require('razorpay');
-const fs = require('fs');
-app.use(express.json());
-app.use(cors());
-require('dotenv').config();
+const Razorpay = require("razorpay");
+require("dotenv").config();
 
+const app = express();
+const port = process.env.PORT || 3000;
+
+// Middleware
+app.use(express.json());
 app.use(cors({
-    origin: 'http://localhost:3001',
-    methods: ['GET', 'POST'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true,
+    origin: [
+        'http://localhost:3001',  // Allow frontend
+        'http://localhost:5173'   // Allow admin
+    ],
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true,  // Allow cookies if necessary
 }));
 
-// Database connection with MongoDB
-mongoose.connect("mongodb+srv://ragava5454:Ragav%402004@cluster0.p1tdy.mongodb.net/e-commerce", {
+// MongoDB Connection
+mongoose.connect(process.env.MONGO_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
 })
-    .then(() => console.log('Connected to MongoDB'))
-    .catch((err) => console.log('Failed to connect to MongoDB:', err));
+    .then(() => console.log("Connected to MongoDB"))
+    .catch((err) => console.error("Failed to connect to MongoDB:", err));
 
-// API Creation
-app.get("/", (req, res) => {
-    res.send("Express App is Running");
-});
+// Routes
+app.get("/", (req, res) => res.send("Express App is Running"));
 
-// Image Storage Engine
+// Image Upload Setup
 const storage = multer.diskStorage({
     destination: './upload/images',
     filename: (req, file, cb) => {
-        return cb(null, `${file.fieldname}_${Date.now()}${path.extname(file.originalname)}`);
-    }
+        cb(null, `${file.fieldname}_${Date.now()}${path.extname(file.originalname)}`);
+    },
 });
-
-const upload = multer({ storage: storage });
-
-// Creating Upload Endpoint for images
+const upload = multer({ storage });
 app.use('/images', express.static('upload/images'));
 
+// Image Upload Endpoint
 app.post("/upload", upload.single('product'), (req, res) => {
     if (!req.file) {
         return res.status(400).json({ success: 0, message: "No file uploaded." });
     }
-
     res.json({
         success: 1,
-        image_url: `http://localhost:${port}/images/${req.file.filename}`
+        image_url: `${process.env.SERVER_URL}/images/${req.file.filename}`
     });
 });
 
-// Schema for creating products
+// Product Schema
 const Product = mongoose.model("Product", {
     id: { type: Number, required: true },
     name: { type: String, required: true },
@@ -69,93 +65,121 @@ const Product = mongoose.model("Product", {
     available: { type: Boolean, default: true },
 });
 
-// Adding products endpoint
+// Add Product Endpoint
 app.post('/addproduct', async (req, res) => {
-    let products = await Product.find({});
-    let id = (products.length > 0) ? products[products.length - 1].id + 1 : 1;
-    const product = new Product({
-        id,
-        name: req.body.name,
-        image: req.body.image,
-        category: req.body.category,
-        new_price: req.body.new_price,
-        old_price: req.body.old_price,
-    });
-    await product.save();
-    res.json({
-        success: true,
-        name: req.body.name,
-    });
+    try {
+        let products = await Product.find({});
+        let id = (products.length > 0) ? products[products.length - 1].id + 1 : 1;
+        const product = new Product({
+            id,
+            name: req.body.name,
+            image: req.body.image,
+            category: req.body.category,
+            new_price: req.body.new_price,
+            old_price: req.body.old_price,
+        });
+        await product.save();
+        res.json({ success: true, product });
+    } catch (error) {
+        res.status(500).json({ error: "Error adding product" });
+    }
 });
 
-// Removing product endpoint
+// Remove Product Endpoint
 app.post('/removeproduct', async (req, res) => {
-    await Product.findOneAndDelete({ id: req.body.id });
-    res.json({
-        success: true,
-        name: req.body.name
-    });
+    try {
+        await Product.findOneAndDelete({ id: req.body.id });
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: "Error removing product" });
+    }
 });
 
-// Get all products
+// Get All Products Endpoint
 app.get('/allproducts', async (req, res) => {
-    const products = await Product.find({});
-    res.json(products);
-    console.log("All Products Fetched");
+    try {
+        const products = await Product.find({});
+        res.json(products);
+    } catch (error) {
+        res.status(500).json({ error: "Error fetching products" });
+    }
 });
 
-// Get new collections (last 8 items)
+// New Collections Endpoint
 app.get('/newcollections', async (req, res) => {
-    const products = await Product.find({});
-    const newCollection = products.slice(-8);
-    res.json(newCollection);
-    console.log("NewCollections Fetched");
+    try {
+        const products = await Product.find({});
+        const newCollection = products.slice(-8);
+        res.json(newCollection);
+    } catch (error) {
+        res.status(500).json({ error: "Error fetching collections" });
+    }
 });
 
-// Get popular products in 'women' category
+// Popular in Women Endpoint
 app.get('/popularinwomen', async (req, res) => {
-    const products = await Product.find({ category: "women" });
-    const popularInWomen = products.slice(0, 4);
-    res.json(popularInWomen);
-    console.log("PopularinWomen Fetched");
+    try {
+        const products = await Product.find({ category: "women" });
+        const popularInWomen = products.slice(0, 4);
+        res.json(popularInWomen);
+    } catch (error) {
+        res.status(500).json({ error: "Error fetching popular items" });
+    }
 });
 
-// Razorpay order creation
+// Razorpay Setup
 const razorpay = new Razorpay({
     key_id: "rzp_test_4HWc8dIvl5vg8Y",
     key_secret: "UFr06eUFazTXJtsXmc3RPEA9",
 });
 
+// Create Razorpay Order
 app.post('/razorpay/order', async (req, res) => {
     try {
         const { amount, currency, receipt, notes } = req.body;
-        const options = {
-            amount: amount * 100, // Convert amount to paise
-            currency,
-            receipt,
-            notes,
-        };
+        const options = { amount: amount * 100, currency, receipt, notes };
         const order = await razorpay.orders.create(options);
-        res.json(order);
+        res.json({
+            orderId: order.id,
+            amount: order.amount,
+            currency: order.currency,
+        });
     } catch (error) {
-        res.status(500).send('Error creating order');
+        res.status(500).json({ error: "Error creating Razorpay order" });
     }
 });
 
-// Payment verification
-app.post('/razorpay/payment/verify', (req, res) => {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
-    const secret = razorpay.key_secret;
-    const body = razorpay_order_id + '|' + razorpay_payment_id;
-    const isValidSignature = validateWebhookSignature(body, razorpay_signature, secret);
-    if (isValidSignature) {
-        res.status(200).json({ status: 'ok' });
+const crypto = require('crypto');
+
+// Backend route to verify payment
+app.post('/razorpay/payment/verify', async (req, res) => {
+  const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = req.body;
+
+  try {
+    // Fetch the order from Razorpay using the order_id
+    const order = await razorpay.orders.fetch(razorpay_order_id);
+
+    // Generate the expected signature using the secret key
+    const generated_signature = crypto
+      .createHmac('sha256', 'UFr06eUFazTXJtsXmc3RPEA9') // Replace with your Razorpay secret key
+      .update(razorpay_order_id + '|' + razorpay_payment_id)
+      .digest('hex');
+
+    // Compare the generated signature with the received signature
+    if (generated_signature === razorpay_signature) {
+      res.json({ status: 'ok' });
     } else {
-        res.status(400).json({ status: 'verification_failed' });
+      res.status(400).json({ status: 'error', message: 'Signature verification failed' });
     }
+  } catch (error) {
+    console.error('Error verifying payment:', error);
+    res.status(500).json({ status: 'error', message: 'Payment verification failed' });
+  }
 });
 
-// Users schema
+
+
+// User Schema
 const Users = mongoose.model('Users', {
     name: { type: String },
     email: { type: String, unique: true },
@@ -164,93 +188,98 @@ const Users = mongoose.model('Users', {
     date: { type: Date, default: Date.now },
 });
 
-// User signup endpoint
+// Signup Endpoint
 app.post('/signup', async (req, res) => {
-    let check = await Users.findOne({ email: req.body.email });
-    if (check) {
-        return res.status(400).json({ success: false, errors: "Existing user found with the same email address" });
+    try {
+        const existingUser = await Users.findOne({ email: req.body.email });
+        if (existingUser) {
+            return res.status(400).json({ error: "User already exists" });
+        }
+        let cart = {};
+        for (let i = 0; i < 300; i++) cart[i] = 0;
+
+        const user = new Users({
+            name: req.body.username,
+            email: req.body.email,
+            password: req.body.password,
+            cartData: cart,
+        });
+
+        await user.save();
+        const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET);
+        res.json({ success: true, token });
+    } catch (error) {
+        res.status(500).json({ error: "Error during signup" });
     }
-    let cart = {};
-    for (let i = 0; i < 300; i++) {
-        cart[i] = 0;
-    }
-    const user = new Users({
-        name: req.body.username,
-        email: req.body.email,
-        password: req.body.password,
-        cartData: cart,
-    });
-
-    await user.save();
-
-    const data = {
-        user: { id: user.id }
-    };
-
-    const token = jwt.sign(data, 'secret_ecom');
-    res.json({ success: true, token });
 });
 
-// User login endpoint
+// Login Endpoint
 app.post('/login', async (req, res) => {
-    let user = await Users.findOne({ email: req.body.email });
-    if (user) {
-        const passCompare = req.body.password === user.password;
-        if (passCompare) {
-            const data = { user: { id: user.id } };
-            const token = jwt.sign(data, 'secret_ecom');
+    try {
+        const user = await Users.findOne({ email: req.body.email });
+        if (user && req.body.password === user.password) {
+            const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET);
             res.json({ success: true, token });
         } else {
-            res.json({ success: false, errors: "Wrong Password" });
+            res.status(400).json({ error: "Invalid email or password" });
         }
-    } else {
-        res.json({ success: false, errors: "Wrong Email Id" });
+    } catch (error) {
+        res.status(500).json({ error: "Error during login" });
     }
 });
 
-// Middleware for fetching user data
+// Middleware to Fetch User
 const fetchUser = async (req, res, next) => {
-    const token = req.header('auth-token');
+    const token = req.header("auth-token");
     if (!token) {
-        return res.status(401).send({ errors: "Please authenticate using a valid token" });
+        return res.status(401).json({ error: "Access denied" });
     }
     try {
-        const data = jwt.verify(token, 'secret_ecom');
-        req.user = data.user;
+        const data = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = data;
         next();
     } catch (error) {
-        return res.status(401).send({ errors: "Please authenticate using a valid token" });
+        res.status(401).json({ error: "Invalid token" });
     }
 };
 
-// Add to cart endpoint
+// Add to Cart Endpoint
 app.post('/addtocart', fetchUser, async (req, res) => {
-    let userData = await Users.findOne({ _id: req.user.id });
-    userData.cartData[req.body.itemId] += 1;
-    await Users.findOneAndUpdate({ _id: req.user.id }, { cartData: userData.cartData });
-    res.send("Added");
+    try {
+        const user = await Users.findById(req.user.id);
+        user.cartData[req.body.itemId] = (user.cartData[req.body.itemId] || 0) + 1;
+        await user.save();
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: "Error adding to cart" });
+    }
 });
 
-// Remove from cart endpoint
+// Remove from Cart Endpoint
 app.post('/removefromcart', fetchUser, async (req, res) => {
-    let userData = await Users.findOne({ _id: req.user.id });
-    if (userData.cartData[req.body.itemId] > 0) {
-        userData.cartData[req.body.itemId] -= 1;
+    try {
+        const user = await Users.findById(req.user.id);
+        if (user.cartData[req.body.itemId] > 0) {
+            user.cartData[req.body.itemId] -= 1;
+            await user.save();
+        }
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: "Error removing from cart" });
     }
-    await Users.findOneAndUpdate({ _id: req.user.id }, { cartData: userData.cartData });
-    res.send("Removed");
 });
 
-// Get cart data endpoint
+// Get Cart Data Endpoint
 app.get('/getcart', fetchUser, async (req, res) => {
-    let userData = await Users.findOne({ _id: req.user.id });
-    res.json(userData.cartData);
+    try {
+        const user = await Users.findById(req.user.id);
+        res.json(user.cartData);
+    } catch (error) {
+        res.status(500).json({ error: "Error fetching cart data" });
+    }
 });
 
-app.listen(port, (error) => {
-    if (!error) {
-        console.log("Server Running on Port " + port);
-    } else {
-        console.log("Error : " + error);
-    }
+// Start Server
+app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
 });

@@ -1,8 +1,8 @@
-import React, { useContext, useEffect } from 'react';
-import './CartItems.css';
-import { ShopContext } from '../../Context/ShopContext';
-import { useNavigate } from 'react-router-dom';
-import remove_icon from '../Assets/cart_cross_icon.png';
+import React, { useContext, useEffect } from "react";
+import "./CartItems.css";
+import { ShopContext } from "../../Context/ShopContext";
+import { useNavigate } from "react-router-dom";
+import remove_icon from "../Assets/cart_cross_icon.png";
 
 const CartItem = ({ product, quantity, onRemove }) => (
   <div className="cartitems-format cartitems-format-main">
@@ -22,7 +22,13 @@ const CartItem = ({ product, quantity, onRemove }) => (
 );
 
 const CartItems = () => {
-  const { fetchCartData, getTotalCartAmount, cartItems, all_product, removeFromCart } = useContext(ShopContext);
+  const {
+    fetchCartData,
+    getTotalCartAmount,
+    cartItems,
+    all_product,
+    removeFromCart,
+  } = useContext(ShopContext);
   const navigate = useNavigate();
 
   // Fetch the cart data when the component is mounted
@@ -59,7 +65,7 @@ const CartItems = () => {
   const cartTotal = getTotalCartAmount();
 
   const handleProceedToCheckout = () => {
-    navigate('/order', { state: { cartTotal, cartItems } });
+    navigate("/order", { state: { cartTotal, cartItems } });
   };
 
   return (

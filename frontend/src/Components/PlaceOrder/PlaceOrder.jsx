@@ -43,6 +43,11 @@ const PlaceOrder = () => {
 
   // Handle payment initiation
   const handlePayment = async () => {
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone) {
+      alert('Please fill in your contact details.');
+      return;
+    }
+
     try {
       const response = await fetch('http://localhost:3000/razorpay/order', {
         method: 'POST',
@@ -68,7 +73,11 @@ const PlaceOrder = () => {
         name: 'FASHIONMART',
         description: 'Order Description',
         order_id: orderId, // Razorpay order ID from backend
-        handler: verifyPayment,
+        handler: function(response) {
+          console.log("Payment Successful:", response);
+          // Ensure that the Razorpay response contains all necessary information
+          verifyPayment(response); // Pass the response to the verification function
+        },
         prefill: {
           name: userData?.name || `${formData.firstName} ${formData.lastName}`,
           email: userData?.email || formData.email,
@@ -84,26 +93,31 @@ const PlaceOrder = () => {
       alert('Error initiating payment');
     }
   };
+  
 
-  // Verify payment after completion
   const verifyPayment = async (response) => {
     const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = response;
-
+  
+    console.log("razorpay_payment_id:", razorpay_payment_id);
+    console.log("razorpay_order_id:", razorpay_order_id);
+    console.log("razorpay_signature:", razorpay_signature);
+  
+    if (!razorpay_order_id || !razorpay_signature) {
+      alert('Missing order ID or signature!');
+      return;
+    }
+  
     try {
       const verificationResponse = await fetch('http://localhost:3000/razorpay/payment/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          razorpay_payment_id, // Update to match backend
-          razorpay_order_id,    // Update to match backend
-          razorpay_signature,   // Update to match backend
+          razorpay_payment_id,
+          razorpay_order_id,
+          razorpay_signature,
         }),
       });
-
-      if (!verificationResponse.ok) {
-        throw new Error('Payment verification failed');
-      }
-
+  
       const result = await verificationResponse.json();
       if (result.status === 'ok') {
         alert('Payment Successful!');
@@ -115,6 +129,8 @@ const PlaceOrder = () => {
       alert('Error verifying payment');
     }
   };
+  
+  
 
   // Handle form field change
   const handleChange = (e) => {
