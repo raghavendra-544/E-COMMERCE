@@ -13,6 +13,7 @@ const getDefaultCart = () => {
 const ShopContextProvider = (props) => {
     const [all_product, setAll_Product] = useState([]);
     const [cartItems, setCartItems] = useState(getDefaultCart());
+    const [loading, setLoading] = useState(false);
 
     // Fetching all products and cart data when the component mounts
     useEffect(() => {
@@ -25,48 +26,77 @@ const ShopContextProvider = (props) => {
         }
     }, []);
 
-    // Function to fetch cart data
     const fetchCartData = () => {
+        setLoading(true); // Set loading state to true
+        const token = localStorage.getItem("auth-token");
+        if (!token) {
+            console.error("No token found");
+            setLoading(false); // Stop loading if no token is found
+            return;
+        }
+
         fetch("http://localhost:3000/getcart", {
             method: "POST",
             headers: {
-                Accept: "application/form-data",
-                "auth-token": `${localStorage.getItem("auth-token")}`,
+                "Accept": "application/json",
+                "auth-token": token,
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({}),
         })
-            .then((response) => response.json())
-            .then((data) => setCartItems(data));
+        .then((response) => response.json())
+        .then((data) => {
+            console.log("Cart data:", data);
+            setCartItems(data); // Update the state with the cart data
+        })
+        .catch((error) => {
+            console.error("Error fetching cart data:", error);
+        })
+        .finally(() => {
+            setLoading(false); // Set loading state to false once data fetching is complete
+        });
     };
 
     const addToCart = (itemId) => {
         setCartItems((prev) => ({ ...prev, [itemId]: (prev[itemId] || 0) + 1 }));
-        if (localStorage.getItem("auth-token")) {
+
+        const token = localStorage.getItem("auth-token");
+        if (token) {
             fetch("http://localhost:3000/addtocart", {
                 method: "POST",
                 headers: {
-                    Accept: "application/form-data",
-                    "auth-token": `${localStorage.getItem("auth-token")}`,
+                    "Accept": "application/json",
+                    "auth-token": token,
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({ itemId: itemId }),
-            }).then((response) => response.json());
+            })
+            .catch((error) => {
+                console.error("Error adding to cart:", error);
+            });
         }
     };
 
     const removeFromCart = (itemId) => {
-        setCartItems((prev) => ({ ...prev, [itemId]: Math.max((prev[itemId] || 0) - 1, 0) }));
-        if (localStorage.getItem("auth-token")) {
+        setCartItems((prev) => ({
+            ...prev,
+            [itemId]: Math.max((prev[itemId] || 0) - 1, 0),
+        }));
+
+        const token = localStorage.getItem("auth-token");
+        if (token) {
             fetch("http://localhost:3000/removefromcart", {
                 method: "POST",
                 headers: {
-                    Accept: "application/form-data",
-                    "auth-token": `${localStorage.getItem("auth-token")}`,
+                    "Accept": "application/json",
+                    "auth-token": token,
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({ itemId: itemId }),
-            }).then((response) => response.json());
+            })
+            .catch((error) => {
+                console.error("Error removing from cart:", error);
+            });
         }
     };
 
@@ -94,7 +124,8 @@ const ShopContextProvider = (props) => {
         cartItems,
         addToCart,
         removeFromCart,
-        fetchCartData, // Ensure fetchCartData is available in the context
+        fetchCartData,
+        loading, // Include loading state in context
     };
 
     return (

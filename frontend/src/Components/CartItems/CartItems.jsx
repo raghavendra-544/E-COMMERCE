@@ -1,4 +1,4 @@
-import React, { useContext, useEffect } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import "./CartItems.css";
 import { ShopContext } from "../../Context/ShopContext";
 import { useNavigate } from "react-router-dom";
@@ -30,15 +30,24 @@ const CartItems = () => {
     removeFromCart,
   } = useContext(ShopContext);
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
 
-  // Fetch the cart data when the component is mounted
   useEffect(() => {
-    fetchCartData();
+    const loadCart = async () => {
+      await fetchCartData();
+      setLoading(false); // Set loading to false once the data is fetched
+    };
+    loadCart();
   }, [fetchCartData]);
+
+  // Handling loading state
+  if (loading) {
+    return <p>Loading your cart...</p>;
+  }
 
   // Safeguard against undefined cartItems or products
   if (!cartItems || !all_product) {
-    return <p>Loading your cart...</p>;
+    return <p>Cart or product data is missing!</p>;
   }
 
   const renderCartItems = () => {

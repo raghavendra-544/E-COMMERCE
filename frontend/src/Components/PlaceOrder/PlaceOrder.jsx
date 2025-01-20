@@ -16,6 +16,8 @@ const PlaceOrder = () => {
     country: '',
     phone: ''
   }); // Manage user input
+  const [loading, setLoading] = useState(true); // Loading state for user data
+  const [paymentLoading, setPaymentLoading] = useState(false); // Loading state for payment
   const cartTotal = getTotalCartAmount();
   const cartItemCount = getTotalCartItems();
 
@@ -35,7 +37,11 @@ const PlaceOrder = () => {
           setUserData(data);
         } catch (error) {
           console.error('Error fetching user data:', error);
+        } finally {
+          setLoading(false); // Set loading to false once the data is fetched
         }
+      } else {
+        setLoading(false);
       }
     };
     fetchUserData();
@@ -47,6 +53,8 @@ const PlaceOrder = () => {
       alert('Please fill in your contact details.');
       return;
     }
+
+    setPaymentLoading(true); // Set payment loading state
 
     try {
       const response = await fetch('http://localhost:3000/razorpay/order', {
@@ -75,7 +83,6 @@ const PlaceOrder = () => {
         order_id: orderId, // Razorpay order ID from backend
         handler: function(response) {
           console.log("Payment Successful:", response);
-          // Ensure that the Razorpay response contains all necessary information
           verifyPayment(response); // Pass the response to the verification function
         },
         prefill: {
@@ -91,16 +98,13 @@ const PlaceOrder = () => {
     } catch (error) {
       console.error('Error initiating payment:', error);
       alert('Error initiating payment');
+    } finally {
+      setPaymentLoading(false); // Set loading state to false after payment initiation
     }
   };
-  
 
   const verifyPayment = async (response) => {
     const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = response;
-  
-    console.log("razorpay_payment_id:", razorpay_payment_id);
-    console.log("razorpay_order_id:", razorpay_order_id);
-    console.log("razorpay_signature:", razorpay_signature);
   
     if (!razorpay_order_id || !razorpay_signature) {
       alert('Missing order ID or signature!');
@@ -129,16 +133,24 @@ const PlaceOrder = () => {
       alert('Error verifying payment');
     }
   };
-  
-  
 
   // Handle form field change
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  // Handle form submission
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    handlePayment();
+  };
+
+  if (loading) {
+    return <p>Loading user data...</p>;
+  }
+
   return (
-    <form className="place-order">
+    <form className="place-order" onSubmit={handleSubmit}>
       <div className="place-order-left">
         <p className="title">Delivery Information</p>
         <div className="multi-fields">
@@ -241,8 +253,8 @@ const PlaceOrder = () => {
               <h3>₹{cartTotal === 0 ? 0 : cartTotal + 50}</h3>
             </div>
           </div>
-          <button type="button" onClick={handlePayment} disabled={cartTotal === 0}>
-            PROCEED TO PAYMENT
+          <button type="submit" disabled={cartTotal === 0 || paymentLoading}>
+            {paymentLoading ? 'Processing Payment...' : 'PROCEED TO PAYMENT'}
           </button>
         </div>
       </div>
