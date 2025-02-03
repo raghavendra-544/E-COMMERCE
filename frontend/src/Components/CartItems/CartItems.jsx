@@ -22,37 +22,28 @@ const CartItem = ({ product, quantity, onRemove }) => (
 );
 
 const CartItems = () => {
-  const {
-    fetchCartData,
-    getTotalCartAmount,
-    cartItems,
-    all_product,
-    removeFromCart,
-  } = useContext(ShopContext);
+  const { getTotalCartAmount, cartItems, all_product, removeFromCart } = useContext(ShopContext);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadCart = async () => {
-      await fetchCartData();
-      setLoading(false); // Set loading to false once the data is fetched
-    };
-    loadCart();
-  }, [fetchCartData]);
+    setLoading(false); // Set loading to false when the component is mounted
+  }, []);
 
-  // Handling loading state
+  // Display loading text while data is being fetched
   if (loading) {
     return <p>Loading your cart...</p>;
   }
 
-  // Safeguard against undefined cartItems or products
+  // Display error if cart data is missing
   if (!cartItems || !all_product) {
     return <p>Cart or product data is missing!</p>;
   }
 
+  // Render cart items
   const renderCartItems = () => {
     return Object.keys(cartItems).map((productId) => {
-      const product = all_product.find((p) => p.id === parseInt(productId)); // Find the product by ID
+      const product = all_product.find((p) => p.id === parseInt(productId));
       const quantity = cartItems[productId];
 
       if (quantity > 0 && product) {
@@ -61,7 +52,7 @@ const CartItems = () => {
             <CartItem
               product={product}
               quantity={quantity}
-              onRemove={() => removeFromCart(product.id)}
+              onRemove={() => removeFromCart(product.id)} // Remove item from cart
             />
             <hr />
           </div>
@@ -73,6 +64,7 @@ const CartItems = () => {
 
   const cartTotal = getTotalCartAmount();
 
+  // Proceed to checkout when button is clicked
   const handleProceedToCheckout = () => {
     navigate("/order", { state: { cartTotal, cartItems } });
   };

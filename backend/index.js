@@ -189,6 +189,84 @@ const Users = mongoose.model('Users', {
     date: { type: Date, default: Date.now },
 });
 
+const Order = mongoose.model('Order', {
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'Users', required: true },
+    deliveryInfo: {
+        firstName: { type: String, required: true },
+        lastName: { type: String, required: true },
+        email: { type: String, required: true },
+        phone: { type: String, required: true },
+        address: { type: String, required: true },
+        city: { type: String, required: true },
+        postalCode: { type: String, required: true },
+    },
+    paymentId: { type: String, required: true },
+    totalCost: { type: Number, required: true },
+    items: [{ type: Object, required: true }],  // Array of items in the order
+    orderDate: { type: Date, default: Date.now },
+    status: { type: String, default: 'Pending' },  // or 'Completed', 'Shipped', etc.
+});
+
+
+// Save order after payment verification (no middleware)
+app.post('/saveorder', async (req, res) => {
+    const { paymentId, deliveryInfo, totalCost, items } = req.body;
+
+    // Extract user from token
+    const token = req.header("auth-token");
+    if (!token) {
+        return res.status(401).json({ error: "Access denied" });
+    }
+    try {
+        const data = jwt.verify(token, process.env.JWT_SECRET || "secret_ecom");
+        const user = await Users.findById(data.id);
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        // Create new order
+        const order = new Order({
+            userId: user._id,
+            paymentId,
+            deliveryInfo,
+            totalCost,
+            items,
+        });
+
+        await order.save();
+        res.json({ success: true, order });
+    } catch (error) {
+        console.error('Error saving order:', error);
+        res.status(500).json({ error: "Error saving order" });
+    }
+});
+
+
+// Fetch user's orders without middleware
+app.get('/myorders', async (req, res) => {
+    const token = req.header('auth-token');
+    if (!token) {
+        return res.status(401).json({ error: 'Access denied' });
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_ecom');
+        const userId = decoded.id;
+
+        // Fetch orders for the user
+        const orders = await Order.find({ userId }).populate('userId');
+        if (!orders || orders.length === 0) {
+            return res.status(404).json({ error: 'No orders found' });
+        }
+        
+        res.json(orders);
+    } catch (error) {
+        console.error('Error fetching orders:', error);
+        res.status(500).json({ error: 'Error fetching orders' });
+    }
+});
+
+
 // Signup Endpoint
 app.post('/signup', async (req, res) => {
     try {
