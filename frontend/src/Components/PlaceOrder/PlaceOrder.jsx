@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { ShopContext } from '../../Context/ShopContext';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate for navigation
+import { useNavigate } from 'react-router-dom';
 import './PlaceOrder.css';
 
 const PlaceOrder = () => {
@@ -9,31 +9,29 @@ const PlaceOrder = () => {
     firstName: '',
     lastName: '',
     email: '',
-    street: '',
+    address: '', // Changed from 'street'
     city: '',
     state: '',
-    zipCode: '',
+    postalCode: '', // Changed from 'zipCode'
     country: '',
     phone: ''
   });
   const [paymentLoading, setPaymentLoading] = useState(false);
   const cartTotal = getTotalCartAmount();
   const cartItemCount = getTotalCartItems();
-  const navigate = useNavigate(); // Initialize the useNavigate hook for navigation
+  const navigate = useNavigate();
 
-  // Check if user is logged in (has an auth-token)
   const isAuthenticated = localStorage.getItem('auth-token') !== null;
 
   useEffect(() => {
     if (!isAuthenticated) {
-      // If not authenticated, redirect the user to the login page
       navigate('/login');
     }
-  }, [isAuthenticated, navigate]); // Run the effect whenever the isAuthenticated state changes
+  }, [isAuthenticated, navigate]);
 
   const handlePayment = async () => {
-    if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone) {
-      alert('Please fill in your contact details.');
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone || !formData.address || !formData.postalCode) {
+      alert('Please fill in all required fields.');
       return;
     }
 
@@ -81,44 +79,52 @@ const PlaceOrder = () => {
 
   const handlePaymentSuccess = async (razorpayData) => {
     const orderData = {
-      paymentId: razorpayData.razorpay_payment_id,
-      deliveryInfo: formData,
-      totalCost: cartTotal === 0 ? 0 : cartTotal + 50,
-      items: cartItems,
+        orderDate: new Date().toISOString(), // Ensure order date is recorded
+        paymentId: razorpayData.razorpay_payment_id,
+        paymentDate: new Date().toISOString(), // Capture payment date
+        totalCost: cartTotal === 0 ? 0 : cartTotal + 50,
+        cartItemCount: cartItemCount,
+        items: cartItems,
+        deliveryInfo: {
+            ...formData,
+            address: formData.address, // Ensure correct field mapping
+            postalCode: formData.postalCode
+        }
     };
 
-    console.log("Order Data to save:", orderData); // Debug the order data being sent
+    console.log("Order Data to save:", orderData);
 
     try {
-      const response = await fetch('http://localhost:3000/saveorder', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`, // Pass the token as a Bearer token
-        },
-        body: JSON.stringify(orderData),
-      });
+        const response = await fetch('http://localhost:3000/saveorder', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'auth-token': localStorage.getItem('auth-token'),
+            },
+            body: JSON.stringify(orderData),
+        });
 
-      if (!response.ok) {
-        const errorMessage = await response.text(); // Capture and log the error message from the response
-        console.error('Error saving order:', errorMessage);
-        alert(`Error saving order: ${errorMessage}`);
-        return;
-      }
+        if (!response.ok) {
+            const errorMessage = await response.text();
+            console.error('Error saving order:', errorMessage);
+            alert(`Error saving order: ${errorMessage}`);
+            return;
+        }
 
-      const data = await response.json();
-      if (data.success) {
-        console.log('Order saved successfully:', data);
-        window.location.href = '/myorders';
-      } else {
-        console.error('Failed to save order:', data);
-        alert('Failed to save order');
-      }
+        const data = await response.json();
+        if (data.success) {
+            console.log('Order saved successfully:', data);
+            window.location.href = '/myorders';
+        } else {
+            console.error('Failed to save order:', data);
+            alert('Failed to save order');
+        }
     } catch (error) {
-      console.error('Error saving order:', error); // Log the error details
-      alert('Error saving order');
+        console.error('Error saving order:', error);
+        alert('Error saving order');
     }
-  };
+};
+
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -138,13 +144,13 @@ const PlaceOrder = () => {
           <input type="text" name="lastName" placeholder="Last name" value={formData.lastName} onChange={handleChange} required />
         </div>
         <input type="email" name="email" placeholder="Email address" value={formData.email} onChange={handleChange} required />
-        <input type="text" name="street" placeholder="Street" value={formData.street} onChange={handleChange} required />
+        <input type="text" name="address" placeholder="Street Address" value={formData.address} onChange={handleChange} required />
         <div className="multi-fields">
           <input type="text" name="city" placeholder="City" value={formData.city} onChange={handleChange} required />
           <input type="text" name="state" placeholder="State" value={formData.state} onChange={handleChange} required />
         </div>
         <div className="multi-fields">
-          <input type="text" name="zipCode" placeholder="Zip code" value={formData.zipCode} onChange={handleChange} required />
+          <input type="text" name="postalCode" placeholder="Postal Code" value={formData.postalCode} onChange={handleChange} required />
           <input type="text" name="country" placeholder="Country" value={formData.country} onChange={handleChange} required />
         </div>
         <input type="text" name="phone" placeholder="Phone" value={formData.phone} onChange={handleChange} required />

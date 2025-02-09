@@ -222,13 +222,15 @@ const Order = mongoose.model('Order', {
     totalCost: { type: Number, required: true },
     items: [{ type: Object, required: true }],  // Array of items in the order
     orderDate: { type: Date, default: Date.now },
+    paymentDate: new Date().toISOString(),
     status: { type: String, default: 'Pending' },  // or 'Completed', 'Shipped', etc.
 });
 
 
 // Save order after payment verification (no middleware)
 app.post('/saveorder', async (req, res) => {
-    const { paymentId, deliveryInfo, totalCost, items } = req.body;
+    const { paymentId, deliveryInfo, totalCost, items, paymentDate } = req.body;
+    console.log("Order Data to Save:", req.body);
 
     // Extract user from token
     const token = req.header("auth-token");
@@ -242,21 +244,26 @@ app.post('/saveorder', async (req, res) => {
             return res.status(404).json({ error: "User not found" });
         }
 
-        // Create new order
-        const order = new Order({
-            userId: user._id,
-            paymentId,
-            deliveryInfo,
-            totalCost,
-            items,
-        });
+        const formattedItems = Object.entries(items) // Convert to array
+        .filter(([key, value]) => value > 0)    // Remove items with 0 quantity
+        .map(([key, value]) => ({ productId: key, quantity: value })); 
+    
+    const order = new Order({
+        userId: user._id,
+        paymentId,
+        paymentDate,
+        deliveryInfo,
+        totalCost,
+        items: formattedItems,  // Use the formatted array
+    });
+    console.log("Formatted Items:", formattedItems);
 
         await order.save();
         res.json({ success: true, order });
-    } catch (error) {
-        console.error('Error saving order:', error);
-        res.status(500).json({ error: "Error saving order" });
-    }
+    } catch (dbError) {
+        console.error("MongoDB Error:", dbError.message, dbError.stack);
+        return res.status(500).json({ error: "Database error", details: dbError.message });
+    } 
 });
 
 

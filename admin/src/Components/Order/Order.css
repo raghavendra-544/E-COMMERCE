@@ -1,0 +1,86 @@
+.my-orders-container {
+    max-width: 900px;
+    margin: auto;
+    padding: 20px;
+    font-family: Arial, sans-serif;
+}
+
+h2 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.order-card {
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 20px;
+    background-color: #fff;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.order-header {
+    background: #f8f8f8;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.order-header h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #333;
+}
+
+.order-header p {
+    margin: 5px 0;
+    font-size: 14px;
+    color: #555;
+}
+
+.order-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.order-item {
+    display: flex;
+    align-items: center;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px;
+    width: 100%;
+    background: #fafafa;
+}
+
+.order-item img {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+    border-radius: 5px;
+    margin-right: 10px;
+    border: 1px solid #ddd;
+}
+
+.order-item-details h5 {
+    margin: 0;
+    font-size: 16px;
+    color: #222;
+}
+
+.order-item-details p {
+    margin: 2px 0;
+    font-size: 14px;
+    color: #666;
+}
+
+.paid {
+    color: green;
+    font-weight: bold;
+}
+
+.unpaid {
+    color: red;
+    font-weight: bold;
+}
