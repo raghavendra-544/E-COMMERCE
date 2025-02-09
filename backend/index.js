@@ -21,6 +21,24 @@ app.use(cors({
     credentials: true,  // Allow cookies if necessary
 }));
 
+// Authentication middleware
+const fetchUser = (req, res, next) => {
+    const token = req.header("auth-token");
+    if (!token) {
+        return res.status(401).json({ error: "Access denied" });
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || "secret_ecom");
+        req.user = decoded;  // Attach user information to the request object
+        next();  // Proceed to the next middleware or route handler
+    } catch (error) {
+        console.error('Error verifying token:', error);
+        res.status(401).json({ error: "Invalid token" });
+    }
+};
+
+
 // MongoDB Connection
 mongoose.connect(process.env.MONGO_URI || "mongodb+srv://ragava5454:Ragav%402004@cluster0.p1tdy.mongodb.net/e-commerce", {
     useNewUrlParser: true,
@@ -306,21 +324,6 @@ app.post('/login', async (req, res) => {
         res.status(500).json({ error: "Error during login" });
     }
 });
-
-// Middleware to Fetch User
-const fetchUser = async (req, res, next) => {
-    const token = req.header("auth-token");
-    if (!token) {
-        return res.status(401).json({ error: "Access denied" });
-    }
-    try {
-        const data = jwt.verify(token, process.env.JWT_SECRET || "secret_ecom" );
-        req.user = data;
-        next();
-    } catch (error) {
-        res.status(401).json({ error: "Invalid token" });
-    }
-};
 
 app.post('/addtocart', fetchUser, async (req, res) => {
     try {
