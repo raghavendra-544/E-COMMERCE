@@ -38,6 +38,60 @@ const fetchUser = (req, res, next) => {
     }
 };
 
+// ✅ Fetch all orders (Public)
+app.get('/admin/orders', async (req, res) => {
+    try {
+        const orders = await Order.find().populate('userId', 'email name');
+        res.json(orders);
+    } catch (error) {
+        console.error('Error fetching orders:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// ✅ Update order status (Admin Only)
+app.put('/admin/orders/:orderId', fetchUser, async (req, res) => {
+    try {
+        const user = await Users.findById(req.user.id);
+        if (!user || !user.isAdmin) {
+            return res.status(403).json({ error: 'Access denied. Admins only.' });
+        }
+
+        const { status } = req.body;
+        const updatedOrder = await Order.findByIdAndUpdate(req.params.orderId, { status }, { new: true });
+
+        if (!updatedOrder) {
+            return res.status(404).json({ error: 'Order not found' });
+        }
+
+        res.json({ message: 'Order status updated', updatedOrder });
+    } catch (error) {
+        console.error('Error updating order status:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+// ✅ Delete order (Admin Only)
+app.delete('/admin/orders/:orderId', fetchUser, async (req, res) => {
+    try {
+        const user = await Users.findById(req.user.id);
+        if (!user || !user.isAdmin) {
+            return res.status(403).json({ error: 'Access denied. Admins only.' });
+        }
+
+        const deletedOrder = await Order.findByIdAndDelete(req.params.orderId);
+        if (!deletedOrder) {
+            return res.status(404).json({ error: 'Order not found' });
+        }
+
+        res.json({ message: 'Order deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting order:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGO_URI || "mongodb+srv://ragava5454:Ragav%402004@cluster0.p1tdy.mongodb.net/e-commerce", {
