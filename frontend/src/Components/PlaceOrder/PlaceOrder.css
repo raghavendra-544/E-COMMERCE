@@ -44,3 +44,13 @@
   max-width: max(40%, 500px);
   margin-bottom: 150px; /* Added margin-bottom of 150px */
 }
+.react-tel-input .form-control {
+  font-family: 'Poppins', sans-serif;
+}
+.react-tel-input .flag-dropdown {
+  border-radius: 4px 0 0 4px;
+  font-family: 'Poppins', sans-serif;
+}
+.react-tel-input {
+  font-family: 'Poppins', sans-serif;
+}

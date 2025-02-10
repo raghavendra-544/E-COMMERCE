@@ -1,6 +1,8 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { ShopContext } from '../../Context/ShopContext';
 import { useNavigate } from 'react-router-dom';
+import PhoneInput from 'react-phone-input-2';
+
 import './PlaceOrder.css';
 
 const PlaceOrder = () => {
@@ -78,12 +80,17 @@ const PlaceOrder = () => {
   };
 
   const handlePaymentSuccess = async (razorpayData) => {
+    // Calculate total quantity of items in the cart
+    const totalItems = Array.isArray(cartItems) 
+        ? cartItems.reduce((acc, item) => acc + (item.quantity || 1), 0) 
+        : 0;
+
     const orderData = {
         orderDate: new Date().toISOString(), // Ensure order date is recorded
         paymentId: razorpayData.razorpay_payment_id,
         paymentDate: new Date().toISOString(), // Capture payment date
         totalCost: cartTotal === 0 ? 0 : cartTotal + 50,
-        cartItemCount: cartItemCount,
+        totalItems: totalItems,  // Updated total item count
         items: cartItems,
         deliveryInfo: {
             ...formData,
@@ -135,6 +142,10 @@ const PlaceOrder = () => {
     handlePayment();
   };
 
+  const handlePhoneChange = (value) => {
+    setFormData({ ...formData, phone: value });
+};
+
   return (
     <form className="place-order" onSubmit={handleSubmit}>
       <div className="place-order-left">
@@ -153,7 +164,7 @@ const PlaceOrder = () => {
           <input type="text" name="postalCode" placeholder="Postal Code" value={formData.postalCode} onChange={handleChange} required />
           <input type="text" name="country" placeholder="Country" value={formData.country} onChange={handleChange} required />
         </div>
-        <input type="text" name="phone" placeholder="Phone" value={formData.phone} onChange={handleChange} required />
+        <PhoneInput name="phone" placeholder='Phone' country={'in'} value={formData.phone} onChange={handlePhoneChange} required/>
       </div>
 
       <div className="place-order-right">

@@ -76,6 +76,7 @@ const MyOrders = () => {
                                             <img src={item.image || packageOrderImage} alt={item.name} className="order-item-image"/>
                                             <div className="order-item-details">
                                                 <h5>{item.name}</h5>
+                                                <p><strong>Quantity:</strong> {item.quantity || 1}</p> {/* Added quantity */}
                                                 <p><strong>Payment ID:</strong> {order.paymentId || 'N/A'}</p>
                                                 <p><strong>Payment Status: </strong>
                                                     <span className={order.paymentId ? 'paid' : 'unpaid'}>
