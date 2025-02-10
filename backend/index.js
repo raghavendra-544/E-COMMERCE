@@ -222,7 +222,7 @@ const Order = mongoose.model('Order', {
     totalCost: { type: Number, required: true },
     items: [{ type: Object, required: true }],  // Array of items in the order
     orderDate: { type: Date, default: Date.now },
-    paymentDate: new Date().toISOString(),
+    paymentDate: { type: Date, default: Date.now },
     status: { type: String, default: 'Pending' },  // or 'Completed', 'Shipped', etc.
 });
 
